@@ -8,23 +8,19 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files
+// Serve frontend
 app.use(express.static(path.join(__dirname, "public")));
 
-// Basic API route
+// API test route
 app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
-    message: "Server is running 🚀",
-  });
+  res.json({ status: "ok", message: "Server running 🚀" });
 });
 
-// Fallback route
+// SPA fallback
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(path.join(__dirname, "public/index.html"));
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });

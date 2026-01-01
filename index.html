@@ -1,48 +1,20 @@
-<div id="auth">
-  <input id="user" placeholder="username">
-  <input id="pass" type="password" placeholder="password">
-  <button onclick="register()">Register</button>
-  <button onclick="login()">Login</button>
-</div>
-<div id="toolbar">
-  <button onclick="exportPCB()">Export Gerber</button>
-  <button onclick="showCAD()">CAD</button>
-  <button onclick="showPCB()">PCB</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CAD + PCB Web App</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>CAD + PCB Web App</h1>
+  <p>Status: <span id="status">Checking...</span></p>
 
-  <button onclick="addCube()">Add Cube</button>
-  <button onclick="addCylinder()">Add Cylinder</button>
-
-  <button onclick="moveSelected(0.2,0,0)">Move X+</button>
-  <button onclick="scaleSelected(1.2)">Scale +</button>
-
-  <button onclick="exportSTL()">Export STL</button>
-</div>
-<script>
-let TOKEN = null;
-
-function register() {
-  fetch('/register', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      username: user.value,
-      password: pass.value
-    })
-  }).then(r=>r.text()).then(alert);
-}
-
-function login() {
-  fetch('/login', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      username: user.value,
-      password: pass.value
-    })
-  })
-  .then(r=>r.json())
-  .then(d => {
-    TOKEN = d.token;
-    alert("Logged in");
-  });
-/</script src="js/pcb_export.js"></script>
+  <script>
+    fetch("/api/health")
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("status").textContent = data.message;
+      });
+  </script>
+</body>
+</html>
