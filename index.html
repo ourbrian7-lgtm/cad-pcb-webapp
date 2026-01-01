@@ -1,20 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>CAD + PCB Web App</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>3D CAD + PCB Web App</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 { color: #38bdf8; margin: 20px 0; }
+    #container { display: flex; gap: 20px; margin-bottom: 20px; }
+    canvas { border: 1px solid #38bdf8; background: #1e293b; }
+    button { margin-top: 10px; padding:5px 10px; cursor:pointer; }
+  </style>
 </head>
 <body>
-  <h1>CAD + PCB Web App</h1>
+  <h1>3D CAD + PCB Web App</h1>
   <p>Status: <span id="status">Checking...</span></p>
 
+  <div id="container">
+    <div>
+      <h2>3D CAD Viewer</h2>
+      <div id="cad3d" style="width:500px;height:400px;"></div>
+      <button id="exportSTL">Export STL</button>
+    </div>
+
+    <div>
+      <h2>PCB Editor</h2>
+      <canvas id="pcbCanvas" width="500" height="400"></canvas>
+      <button id="pcbExport">Export PCB JSON</button>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/three@0.150.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.150.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://unpkg.com/three@0.150.0/examples/js/exporters/STLExporter.js"></script>
+
   <script>
+    // ---------------- Backend health ----------------
     fetch("/api/health")
       .then(res => res.json())
-      .then(data => {
-        document.getElementById("status").textContent = data.message;
+      .then(data => document.getElementById("status").textContent = data.message);
+
+    // ---------------- 3D CAD Setup ----------------
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1e293b);
+
+    const camera = new THREE.PerspectiveCamera(75, 500/400, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(500,400);
+    document.getElementById("cad3d").appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    // Lighting
+    const light = new THREE.DirectionalLight(0xffffff,1);
+    light.position.set(10,10,10);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0x404040));
+
+    // Ground grid
+    const gridHelper = new THREE.GridHelper(20,20);
+    scene.add(gridHelper);
+
+    // Demo CAD cube
+    const geometry = new THREE.BoxGeometry(2,2,2);
+    const material = new THREE.MeshStandardMaterial({ color: 0x38bdf8 });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    camera.position.set(5,5,5);
+    controls.update();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Export STL
+    document.getElementById("exportSTL").addEventListener("click", () => {
+      const exporter = new THREE.STLExporter();
+      const stlString = exporter.parse(scene);
+      const blob = new Blob([stlString], {type:'text/plain'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'cad_design.stl';
+      a.click();
+    });
+
+    // ---------------- PCB Editor ----------------
+    const pcbCanvas = document.getElementById("pcbCanvas");
+    const pcbCtx = pcbCanvas.getContext("2d");
+    const gridSize = 20;
+    let pcbTraces = [];
+    let drawing = false;
+    let lastPos = null;
+
+    // Draw PCB grid
+    function drawPCB() {
+      pcbCtx.clearRect(0,0,pcbCanvas.width,pcbCanvas.height);
+      pcbCtx.strokeStyle = "#444";
+      pcbCtx.lineWidth = 1;
+      for(let x=0;x<pcbCanvas.width;x+=gridSize){
+        pcbCtx.beginPath();
+        pcbCtx.moveTo(x,0);
+        pcbCtx.lineTo(x,pcbCanvas.height);
+        pcbCtx.stroke();
+      }
+      for(let y=0;y<pcbCanvas.height;y+=gridSize){
+        pcbCtx.beginPath();
+        pcbCtx.moveTo(0,y);
+        pcbCtx.lineTo(pcbCanvas.width,y);
+        pcbCtx.stroke();
+      }
+
+      pcbCtx.strokeStyle = "#0f0";
+      pcbCtx.lineWidth = 3;
+      pcbTraces.forEach(t => {
+        pcbCtx.beginPath();
+        pcbCtx.moveTo(t[0].x, t[0].y);
+        t.forEach(p => pcbCtx.lineTo(p.x,p.y));
+        pcbCtx.stroke();
       });
+    }
+    drawPCB();
+
+    pcbCanvas.addEventListener("mousedown", e => {
+      drawing = true;
+      lastPos = [{x:e.offsetX, y:e.offsetY}];
+      pcbTraces.push(lastPos);
+    });
+
+    pcbCanvas.addEventListener("mousemove", e => {
+      if(!drawing) return;
+      lastPos.push({x:e.offsetX, y:e.offsetY});
+      drawPCB();
+    });
+
+    pcbCanvas.addEventListener("mouseup", e => { drawing = false; });
+
+    document.getElementById("pcbExport").addEventListener("click", () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(pcbTraces));
+      const dl = document.createElement("a");
+      dl.setAttribute("href", dataStr);
+      dl.setAttribute("download", "pcb_design.json");
+      dl.click();
+    });
   </script>
 </body>
 </html>
