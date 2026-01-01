@@ -1,3 +1,12 @@
+# Node & npm
 node_modules/
-.env
+.npm/
+
+# Python cache (Termux / pip)
+.cache/
+
+# SSH keys
+.ssh/
+
+# OS junk
 .DS_Store
