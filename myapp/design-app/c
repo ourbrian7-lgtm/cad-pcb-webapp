@@ -1,0 +1,20 @@
+<!DOCTY
+PE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D & PCB Designer</title>
+  <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.158.0/examples/js/exporters/STLExporter.js"></script>
+  <script src="js/cad.js"></script>
+  <script src="js/pcb.js"></script>
+  <style>
+    body { margin:0; display:flex; }
+    #cad, #pcb { width:50vw; height:100vh; border:1px solid #000; }
+  </style>
+</head>
+<body>
+  <canvas id="cad"></canvas>
+  <canvas id="pcb"></canvas>
+</body>
+</html>
